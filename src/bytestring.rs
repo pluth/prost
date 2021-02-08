@@ -1,4 +1,5 @@
 use alloc::{string::String, vec::Vec};
+use ops::Deref;
 use core::{borrow, convert::TryFrom, fmt, hash, ops, str};
 
 use bytes::Bytes;
@@ -34,6 +35,10 @@ impl ByteString {
     /// Creates a new `ByteString` from a `&'static str`.
     pub const fn from_static(src: &'static str) -> ByteString {
         Self(Bytes::from_static(src.as_bytes()))
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.deref()
     }
 
     /// Creates a new `ByteString` from a Bytes.
