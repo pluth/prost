@@ -14,7 +14,7 @@ use prost_types::{
     SourceCodeInfo,
 };
 
-use crate::ast::{Comments, Method, Service};
+use crate::{StringType, ast::{Comments, Method, Service}};
 use crate::extern_paths::ExternPaths;
 use crate::ident::{to_snake, to_upper_camel};
 use crate::message_graph::MessageGraph;
@@ -306,15 +306,29 @@ impl<'a> CodeGenerator<'a> {
         let type_tag = self.field_type_tag(&field);
         self.buf.push_str(&type_tag);
 
-        if type_ == Type::Bytes {
-            let bytes_type = self
-                .config
-                .bytes_type
-                .get_field(fq_message_name, field.name())
-                .copied()
-                .unwrap_or_default();
-            self.buf
-                .push_str(&format!("={:?}", bytes_type.annotation()));
+        match type_ {
+            Type::Bytes => {
+                let bytes_type = self
+                    .config
+                    .bytes_type
+                    .get_field(fq_message_name, field.name())
+                    .copied()
+                    .unwrap_or_default();
+                self.buf
+                    .push_str(&format!("={:?}", bytes_type.annotation()));
+            }
+            Type::String => {
+                let string_type = self
+                    .config
+                    .bytes_type
+                    .get_field(fq_message_name, field.name())
+                    .copied()
+                    .map(StringType::from)
+                    .unwrap_or_default();
+                self.buf
+                    .push_str(&format!("={:?}", string_type.annotation()));
+            }
+            _ => (),
         }
 
         match field.label() {
@@ -746,7 +760,15 @@ impl<'a> CodeGenerator<'a> {
             Type::Int32 | Type::Sfixed32 | Type::Sint32 | Type::Enum => String::from("i32"),
             Type::Int64 | Type::Sfixed64 | Type::Sint64 => String::from("i64"),
             Type::Bool => String::from("bool"),
-            Type::String => String::from("::prost::alloc::string::String"),
+            Type::String => self
+                .config
+                .bytes_type
+                .get_field(fq_message_name, field.name())
+                .copied()
+                .map(StringType::from)
+                .unwrap_or_default()
+                .rust_type()
+                .to_owned(),
             Type::Bytes => self
                 .config
                 .bytes_type
@@ -1030,6 +1052,22 @@ impl BytesType {
         match self {
             BytesType::Vec => "::prost::alloc::vec::Vec<u8>",
             BytesType::Bytes => "::prost::bytes::Bytes",
+        }
+    }
+}
+
+impl StringType {
+    fn rust_type(&self) -> &'static str {
+        match self {
+            StringType::String => "::prost::alloc::string::String",
+            StringType::ByteString => "::prost::bytestring::ByteString",
+        }
+    }
+
+    fn annotation(&self) -> &'static str {
+        match self {
+            StringType::String => "string",
+            StringType::ByteString => "bytestring",
         }
     }
 }

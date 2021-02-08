@@ -303,7 +303,6 @@ impl Field {
 
         // A fake field for generating the debug wrapper
         let key_wrapper = fake_scalar(self.key_ty.clone()).debug(quote!(KeyWrapper));
-        let key = self.key_ty.rust_type();
         let value_wrapper = self.value_ty.debug();
         let libname = self.map_ty.lib();
         let fmt = quote! {
@@ -318,20 +317,24 @@ impl Field {
             }
         };
         match &self.value_ty {
-            ValueTy::Scalar(ty) => {
-                let value = ty.rust_type();
+            ValueTy::Scalar(_ty) => {
                 quote! {
-                    struct #wrapper_name<'a>(&'a ::#libname::collections::#type_name<#key, #value>);
-                    impl<'a> ::core::fmt::Debug for #wrapper_name<'a> {
+                    struct #wrapper_name<'a, K, V>(&'a ::#libname::collections::#type_name<K, V>);
+                    impl<'a, K, V> ::core::fmt::Debug for #wrapper_name<'a, K, V>
+                    where
+                        K: ::core::fmt::Debug,
+                        V: ::core::fmt::Debug + 'a
+                    {
                         #fmt
                     }
                 }
             }
             ValueTy::Message => quote! {
-                struct #wrapper_name<'a, V: 'a>(&'a ::#libname::collections::#type_name<#key, V>);
-                impl<'a, V> ::core::fmt::Debug for #wrapper_name<'a, V>
+                struct #wrapper_name<'a, K, V: 'a>(&'a ::#libname::collections::#type_name<K, V>);
+                impl<'a, K, V> ::core::fmt::Debug for #wrapper_name<'a, K, V>
                 where
-                    V: ::core::fmt::Debug + 'a,
+                    K: ::core::fmt::Debug,
+                    V: ::core::fmt::Debug + 'a
                 {
                     #fmt
                 }
@@ -354,7 +357,7 @@ fn key_ty_from_str(s: &str) -> Result<scalar::Ty, Error> {
         | scalar::Ty::Sfixed32
         | scalar::Ty::Sfixed64
         | scalar::Ty::Bool
-        | scalar::Ty::String => Ok(ty),
+        | scalar::Ty::String(..) => Ok(ty),
         _ => bail!("invalid map key type: {}", s),
     }
 }

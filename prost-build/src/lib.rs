@@ -126,6 +126,7 @@ use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use bytes::Bytes;
 use log::trace;
 use prost::Message;
 use prost_types::{FileDescriptorProto, FileDescriptorSet};
@@ -213,6 +214,28 @@ enum BytesType {
 impl Default for BytesType {
     fn default() -> BytesType {
         BytesType::Vec
+    }
+}
+
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum StringType {
+    String,
+    ByteString,
+}
+
+impl Default for StringType {
+    fn default() -> StringType {
+        StringType::String
+    }
+}
+
+impl From<BytesType> for StringType {
+    fn from(bt: BytesType) -> Self {
+        match bt {
+            BytesType::Vec => Self::String,
+            BytesType::Bytes => Self::ByteString,
+        }
     }
 }
 
