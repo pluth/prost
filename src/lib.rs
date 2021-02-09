@@ -16,6 +16,7 @@ mod types;
 #[doc(hidden)]
 pub mod encoding;
 
+pub use bytestring;
 pub use crate::error::{DecodeError, EncodeError};
 pub use crate::message::Message;
 
