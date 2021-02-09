@@ -9,8 +9,6 @@ pub extern crate alloc;
 #[doc(hidden)]
 pub use bytes;
 
-pub mod bytestring;
-
 mod error;
 mod message;
 mod types;

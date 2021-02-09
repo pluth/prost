@@ -1,11 +1,11 @@
-use crate::bytestring::ByteString;
+use bytestring::ByteString;
 use super::BytesAdapter;
 
 use super::*;
 
 pub trait StringAdapter: Default + Sized + 'static {
     type Bytes: BytesAdapter;
-    unsafe fn bytes_mut(&mut self) -> &mut Self::Bytes;
+    unsafe fn as_mut_bytes(&mut self) -> &mut Self::Bytes;
     fn as_bytes(&self) -> &[u8];
     fn len(&self) -> usize;
     fn clear(&mut self);
@@ -14,8 +14,8 @@ pub trait StringAdapter: Default + Sized + 'static {
 impl StringAdapter for ByteString {
     type Bytes = ::bytes::Bytes;
 
-    unsafe fn bytes_mut(&mut self) -> &mut Self::Bytes {
-        self.as_bytes_mut()
+    unsafe fn as_mut_bytes(&mut self) -> &mut Self::Bytes {
+        self.as_mut_bytes()
     }
 
     fn as_bytes(&self) -> &[u8] {
@@ -34,7 +34,7 @@ impl StringAdapter for ByteString {
 impl StringAdapter for String {
     type Bytes = Vec<u8>;
 
-    unsafe fn bytes_mut(&mut self) -> &mut Self::Bytes {
+    unsafe fn as_mut_bytes(&mut self) -> &mut Self::Bytes {
         self.as_mut_vec()
     }
 
@@ -94,7 +94,7 @@ where
         }
 
         let drop_guard = DropGuard(value);
-        bytes::merge(wire_type, drop_guard.0.bytes_mut(), buf, ctx)?;
+        bytes::merge(wire_type, drop_guard.0.as_mut_bytes(), buf, ctx)?;
         match str::from_utf8(drop_guard.0.as_bytes()) {
             Ok(_) => {
                 // Success; do not clear the bytes.

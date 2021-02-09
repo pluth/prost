@@ -39,6 +39,7 @@ std = []
 
 [dependencies]
 bytes = { version = "1", default-features = false }
+bytestring = { git = "https://github.com/pluth/bytestring.git" }
 prost-derive = { version = "0.7.0", path = "prost-derive", optional = true }
 
 [dev-dependencies]
